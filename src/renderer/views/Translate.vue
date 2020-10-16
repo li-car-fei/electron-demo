@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import { history } from "../util/local_data";
+import { Trans_history } from "../util/local_data";
 const request = require("request-promise");
 var crypto = require("crypto");
 const config = require("../module/Tran_config");
@@ -59,7 +59,7 @@ class Translator {
 
   async translate(word) {
     let encodeURIWord = word;
-    if (this.from == "zh" || this.from == "zh-CHS") {
+    if (this.from == "zh" || this.from == "zh-CHS" || this.from == "auto") {
       // 中文需要进行uri编码
       encodeURIWord = encodeURI(word);
     }
@@ -102,17 +102,16 @@ export default {
       cb(results);
     },
     createFilter(queryString) {
-      return (restaurant) => {
-        return (
-          restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) ===
-          0
-        );
+      return (history_item) => {
+        return history_item.value.indexOf(queryString) == 0;
       };
     },
 
     // 选择历史记录
-    handleSelect(item) {
-      console.log(item);
+    async handleSelect(item) {
+      //console.log(item.value);
+      const result = await this.translateString(item.value, this.translator);
+      this.search_result = result;
     },
 
     async search() {
@@ -121,9 +120,11 @@ export default {
         this.translator
       );
       this.search_result = result;
-      this.history.push(this.searchWords);
+      this.history.push({
+        value: this.searchWords,
+      });
       this.searchWords = "";
-      history.set(this.history);
+      Trans_history.set(this.history);
     },
 
     async translateString(str, translator) {
@@ -132,8 +133,9 @@ export default {
     },
   },
   mounted() {
-    this.history = history.get();
-    this.translator = new Translator(0, "zh-CHS", "en");
+    this.history = Trans_history.get();
+    //this.translator = new Translator(0, "zh-CHS", "en");
+    this.translator = new Translator(0, "auto", "en");
     this.translateString("中国", this.translator);
   },
 };

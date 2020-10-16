@@ -23,7 +23,7 @@ const History_data = function () {
 }
 
 const local = new Local_data();
-const history = new History_data()
+const Trans_history = new History_data()
 
 const getDate = () => { //获取当天日期
     const date = new Date(),
@@ -31,4 +31,4 @@ const getDate = () => { //获取当天日期
     return date.getFullYear() + '-' + mouth + '-' + date.getDate();
 }
 
-export { local, history, getDate }
+export { local, Trans_history, getDate }
