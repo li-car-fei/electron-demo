@@ -57,6 +57,7 @@
     "axios": "^0.18.0",
     "baidu-aip-sdk": "^2.4.6",
     "crypto": "^1.0.1",
+    "electron-pdf-window": "^1.0.12",
     "electron-serve": "^1.0.0",
     "element-ui": "^2.13.2",
     "es6-promise": "^4.2.8",

@@ -1,5 +1,5 @@
 import { app, BrowserWindow } from 'electron'
-import path
+const PDFWindow = require('electron-pdf-window')
 
 /**
  * Set `__static` path to static files in production
@@ -40,6 +40,14 @@ function createWindow() {
   })
 }
 
+function PDFReader(url) {             // 打开 pdf read
+  const win = new PDFWindow({
+    width: 800,
+    height: 600
+  });
+  win.loadURL(url)
+}
+
 // 初始化后创建window
 app.on('ready', createWindow)
 
@@ -56,37 +64,12 @@ app.on('activate', () => {
 })
 
 
-// // 定义pdfRead窗体
-// let PdfWindow
-// // 创建calendar窗口方法
-// function openPdfWindow(url) {
-//   PdfWindow = new BrowserWindow({
-//     width: 400,
-//     height: 550,
-//     parent: mainWindow, // 主窗口
-//     webPreferences: {
-//       nodeIntegration: true
-//     }
-//   })
-//   PdfWindow.loadURL(winURL + '#/Calendar')
-//   PdfWindow.on('closed', () => { PdfWindow = null })
-// }
-// ipcMain.on('openPdfWindow', (e, arg) => {
-//   console.log(arg)
-//   //openPdfWindow(arg);
-//   e.sender.send('Readpdf_down', 'done');
-//   //openPdfWindow()
-// }
-// )
-
-
-// 监听获取viewer.html文件位置、
-function getUrl(win) {
-  const filePath = process.env.NODE_ENV === 'development' ? `${__static}\\pdfjs\\web\\viewer.html` : path.resolve(__dirname, '../../../static/pdfjs/web/viewer.html')
-  win.webContents.send('recieve', filePath)
+const { ipcMain } = require('electron')
+ipcMain.on('openPdfWindow', (e, arg) => {               // 监听打开pdf
+  PDFReader(arg)
+  e.sender.send('Readpdf_down', 'done');
 }
-// pdf预览获取viewer.html文件位置
-ipcMain.on('getUrl', () => getUrl(win))
+)
 
 
 

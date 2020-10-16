@@ -37,18 +37,6 @@ const router = new Router({
       component: LandingPage
     },
     {
-      path: '/pdfRead/:url',
-      name: 'pdfRead',
-      component: require('@/components/pdf'),
-      props: true
-    },
-    {
-      path: '/ReadPdf/:url',
-      name: 'ReadPdf',
-      component: require('@/components/pdfRead'),
-      props: true
-    },
-    {
       path: '/translate',
       name: 'translate',
       component: Translate

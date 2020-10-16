@@ -2,6 +2,7 @@
 function isImage(imgUrl) {
     let imageFormat = ['.png', '.jpg', '.jpeg', '.gif', '.bmp'];
     imgUrl = imgUrl.toLowerCase();
+    console.log(imgUrl)
     return imageFormat.some(ft => {
         return imgUrl.endsWith(ft);
     });

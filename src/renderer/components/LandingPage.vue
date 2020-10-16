@@ -1,32 +1,35 @@
 <template>
   <div class="content">
     <div align="center">
-      <!-- <el-input
-        id="input01"
-        type="textarea"
-        :autosize="{ minRows: 2, maxRows: 10}"
-        placeholder="请选择文件"
-        v-model="textarea"
-      ></el-input>-->
       <div v-if="ifShowPath">
-        <li v-for="(path,index) in fileList">
-          <span :style="{color:(index==chooseIndex?'#03a9f4':'grey')}">{{path}}</span>
-          <el-button size="mini" circle v-on:click="choosePath(index)">choose</el-button>
-          <el-button size="mini" circle v-on:click="deletePath(index)">delete</el-button>
+        <li v-for="(path, index) in fileList">
+          <span :style="{ color: index == chooseIndex ? '#03a9f4' : 'grey' }">{{
+            path
+          }}</span>
+          <el-button size="mini" circle v-on:click="choosePath(index)"
+            >choose</el-button
+          >
+          <el-button size="mini" circle v-on:click="deletePath(index)"
+            >delete</el-button
+          >
         </li>
       </div>
     </div>
 
     <div align="center">
-      <el-button type="primary" v-on:click="openFile()" round>选择文件</el-button>
-      <el-button type="primary" v-on:click="showRealPath()" round>显示路径</el-button>
-      <el-button type="primary" v-on:click="OcrGet()" round>Ocr</el-button>
+      <el-button type="primary" v-on:click="openFile()" round
+        >选择文件</el-button
+      >
+      <el-button type="primary" v-on:click="showRealPath()" round
+        >显示路径</el-button
+      >
+      <el-button type="primary" v-on:click="OcrGet()" round>Ocr解析</el-button>
       <input
         type="file"
         multiple="multiple"
         name="filename"
         id="open"
-        style="display:none"
+        style="display: none"
         @change="fileListChange()"
         ref="fileList"
       />
@@ -34,11 +37,21 @@
 
     <div class="selected">
       <span id="selected-file">解析pdf</span>
-      <el-button type="primary" size="small" v-on:click="runPy()" round>run python</el-button>
+      <el-button type="primary" size="small" v-on:click="runPy()" round
+        >run python</el-button
+      >
+    </div>
+    <div class="selected">
+      <span id="selected-file">截图</span>
+      <el-button type="primary" size="small" v-on:click="cut()" round
+        >Cut</el-button
+      >
     </div>
     <div class="selected">
       <span id="selected-file">查看pdf</span>
-      <el-button type="primary" size="small" v-on:click="ReadPdf()" round>查看pdf</el-button>
+      <el-button type="primary" size="small" v-on:click="ReadPdf()" round
+        >Read</el-button
+      >
     </div>
     <div class="ocr-content">
       <h4>OCR结果</h4>
@@ -46,21 +59,26 @@
         v-model="ocr_result"
         placeholder="result..."
         type="textarea"
-        :autosize="{ minRows: 6, maxRows: 16}"
+        :autosize="{ minRows: 6, maxRows: 16 }"
       ></el-input>
     </div>
   </div>
 </template>
 
 <script>
-const exec = require("child_process").exec;
 const ipcRenderer = require("electron").ipcRenderer;
 const { dialog } = require("electron").remote;
 const ocr = require("../util/ocr");
-const fs = require("fs");
 const client = require("../module/ocr/OcrClient");
-//const { imgOcr } = require("../API/OCR");
-//const sendToPython = require("../API/processpy");
+
+// 截图功能所需库
+const desktopCapturer = require("electron").desktopCapturer;
+const electronScreen = require("electron").screen;
+const shell = require("electron").shell;
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+
 export default {
   name: "landing-page",
   data() {
@@ -76,6 +94,48 @@ export default {
   components: {},
   mounted() {},
   methods: {
+    determineScreenShotSize: function () {
+      // 确定截图尺寸
+      const screenSize = electronScreen.getPrimaryDisplay().workAreaSize;
+      const maxDimension = Math.max(screenSize.width, screenSize.height);
+      return {
+        width: maxDimension * window.devicePixelRatio,
+        height: maxDimension * window.devicePixelRatio,
+      };
+    },
+    cut: async function () {
+      const that = this;
+      const thumbSize = this.determineScreenShotSize();
+      let options = { types: ["screen"], thumbnailSize: thumbSize };
+      desktopCapturer.getSources(options, async function (error, sources) {
+        if (error) return console.log(error);
+        const result = await dialog.showOpenDialog({
+          // 选择保存截图的文件夹
+          properties: ["openFile", "openDirectory"],
+          title: "请选择保存截图的位置",
+        });
+        if (!result) {
+          return console.log("cancel");
+        }
+        let screenshotPath = result[0];
+        sources.forEach(function (source) {
+          if (source.name === "Entire screen" || source.name === "Screen 1") {
+            //const screenshotPath = path.join(os.tmpdir(), "screenshot.png");
+            screenshotPath = path.join(screenshotPath, "screenshot.png");
+            fs.writeFile(screenshotPath, source.thumbnail.toPNG(), function (
+              error
+            ) {
+              if (error) return console.log(error);
+              shell.openExternal("file://" + screenshotPath);
+              //that.fileList.push(`file://${screenshotPath}`);
+              that.fileList.push(screenshotPath);
+              that.ocr_url = that.fileList[that.chooseIndex];
+            });
+          }
+        });
+      });
+    },
+
     openFile: function () {
       document.getElementById("open").click();
     },
@@ -98,18 +158,9 @@ export default {
     },
     showRealPath: function () {
       this.ifShowPath = !this.ifShowPath;
-      // document.getElementById("input01").value = document.getElementById(
-      //   "open"
-      // ).files[0].path;
-      //console.log(document.getElementById("open").files);
     },
     async OcrGet() {
-      const result = await this.fileHandler(
-        //document.getElementById("open").files[0].path
-        this.ocr_url
-      );
-      //console.log(result);
-      //console.log("out" + words);
+      const result = await this.fileHandler(this.ocr_url);
       this.ocr_result = result;
     },
     async fileHandler(path) {
@@ -130,37 +181,34 @@ export default {
         }
       );
     },
-    runPy() {
-      //sendToPython();
-      const path = this.ocr_url;
-      //const path = document.getElementById("open").files[0].path;
-      if (path && ocr.isPdf(path)) {
-        var python = require("child_process").spawn("python", [
-          "./python/pdfUdit.py",
-          path,
-        ]);
-        python.stdout.on("data", function (data) {
-          console.log("Python response: ", data.toString("utf8"));
-        });
+    // runPy() {
+    //   const path = this.ocr_url;
+    //   //const path = document.getElementById("open").files[0].path;
+    //   if (path && ocr.isPdf(path)) {
+    //     var python = require("child_process").spawn("python", [
+    //       "./python/pdfUdit.py",
+    //       path,
+    //     ]);
+    //     python.stdout.on("data", function (data) {
+    //       console.log("Python response: ", data.toString("utf8"));
+    //     });
 
-        python.stderr.on("data", (data) => {
-          console.error(`stderr: ${data}`);
-        });
+    //     python.stderr.on("data", (data) => {
+    //       console.error(`stderr: ${data}`);
+    //     });
 
-        python.on("close", (code) => {
-          console.log(`child process exited with code ${code}`);
-        });
-      } else {
-        this.showMessage("请选择 .pdf 文件", () => {});
-      }
-    },
+    //     python.on("close", (code) => {
+    //       console.log(`child process exited with code ${code}`);
+    //     });
+    //   } else {
+    //     this.showMessage("请选择 .pdf 文件", () => {});
+    //   }
+    // },
     ReadPdf() {
-      //const url = document.getElementById("open").files[0].path;
       const url = this.ocr_url;
       if (url && ocr.isPdf(url)) {
-        this.$router.push({ name: "ReadPdf", params: { url: url } });
-        // 通知主进程打开子页面
-        // ipcRenderer.send("openPdfWindow", url);
+        //通知主进程打开子页面
+        ipcRenderer.send("openPdfWindow", url);
         // ipcRenderer.on("Readpdf_down", function (event, info) {
         //   console.log(info);
         // });
@@ -178,18 +226,11 @@ export default {
         backfun
       );
     },
-    // runPy() {
-    //   const path = document.getElementById("open").files[0].path;
-    //   this.pyShell("./python/pdfUdit.py", { path: path }).then((res) => {
-    //     console.log(res);
-    //   });
-    // },
   },
 };
 </script>
 
 <style>
-/*@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');*/
 @import "../css/index.css";
 
 * {
