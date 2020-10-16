@@ -7,13 +7,20 @@
         :fetch-suggestions="querySearch"
         placeholder="请输入内容"
         @select="handleSelect"
+        @keydown.enter.native="search"
       ></el-autocomplete>
     </div>
+    <el-input
+      v-model="search_result"
+      placeholder="result..."
+      type="textarea"
+      :autosize="{ minRows: 6, maxRows: 16 }"
+    ></el-input>
   </div>
 </template>
 
 <script>
-//const Translator = require("../module/trans/translator");
+import { history } from "../util/local_data";
 const request = require("request-promise");
 var crypto = require("crypto");
 const config = require("../module/Tran_config");
@@ -81,6 +88,7 @@ export default {
     return {
       history: [],
       searchWords: "",
+      search_result: "",
     };
   },
   methods: {
@@ -107,14 +115,26 @@ export default {
       console.log(item);
     },
 
+    async search() {
+      const result = await this.translateString(
+        this.searchWords,
+        this.translator
+      );
+      this.search_result = result;
+      this.history.push(this.searchWords);
+      this.searchWords = "";
+      history.set(this.history);
+    },
+
     async translateString(str, translator) {
       let resultStr = await translator.translate(str);
-      console.log(resultStr);
+      return resultStr;
     },
   },
   mounted() {
-    let translator = new Translator(1, "zh", "en");
-    this.translateString("城市", translator);
+    this.history = history.get();
+    this.translator = new Translator(0, "zh-CHS", "en");
+    this.translateString("中国", this.translator);
   },
 };
 </script>

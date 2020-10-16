@@ -1,4 +1,4 @@
-const local_data = function () {
+const Local_data = function () {
     this.get = function () {
         return localStorage.getItem('todo_list') ? JSON.parse(localStorage.getItem('todo_list')) : [];
     }
@@ -10,7 +10,20 @@ const local_data = function () {
     }
 };
 
-const local = new local_data();
+const History_data = function () {
+    this.get = function () {
+        return localStorage.getItem('trans_history') ? JSON.parse(localStorage.getItem('trans_history')) : [];
+    }
+    this.set = function (trans_history) {
+        localStorage.setItem('trans_history', JSON.stringify(trans_history));
+    }
+    this.clear = function () {
+        localStorage.removeItem('trans_history')
+    }
+}
+
+const local = new Local_data();
+const history = new History_data()
 
 const getDate = () => { //获取当天日期
     const date = new Date(),
@@ -18,4 +31,4 @@ const getDate = () => { //获取当天日期
     return date.getFullYear() + '-' + mouth + '-' + date.getDate();
 }
 
-export { local, getDate }
+export { local, history, getDate }
