@@ -61,7 +61,6 @@
     "electron-serve": "^1.0.0",
     "element-ui": "^2.13.2",
     "es6-promise": "^4.2.8",
-    "pdfjs-dist": "^2.5.207",
     "python-shell": "^2.0.1",
     "request-promise": "^4.2.6",
     "vue": "^2.5.16",

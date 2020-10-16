@@ -25,7 +25,6 @@ let rendererConfig = {
   devtool: '#cheap-module-eval-source-map',
   entry: {
     renderer: path.join(__dirname, '../src/renderer/main.js'),
-    'pdf.worker': 'pdfjs-dist/build/pdf.worker.entry',
   },
   externals: [
     ...Object.keys(dependencies || {}).filter(d => !whiteListedModules.includes(d))
